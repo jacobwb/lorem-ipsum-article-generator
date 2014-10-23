@@ -70,15 +70,7 @@
 	$open_mysql->exec($create);
 	$open_sqlite->exec($create);
 
-	function generate_sql($id, $db) {
-		$write  = 'INSERT INTO articles VALUES'
-			. '(:id,'
-			. ' :title,'
-			. ' :keywords,'
-			. ' :description,'
-			. ' :date,'
-			. ' :body)';
-
+	function generate_sql($id, $prepare) {
 		$prepared_array = array(
 			'id' => $id,
 			'title' => generate_string(),
@@ -89,7 +81,6 @@
 		);
 
 		try {
-			$prepare = $db->prepare($write);
 			$prepare->execute($prepared_array);
 		} catch (PDOException $error) {
 			exit($error->getMessage());
@@ -111,10 +102,21 @@
 	function write_sql($db, $num, $sql) {
 		echo $num . ' ' . $sql . ' entries written to database in ...';
 		$sql_start = microtime(true);
+		$write  = 'INSERT INTO articles VALUES'
+			. '(:id,'
+			. ' :title,'
+			. ' :keywords,'
+			. ' :description,'
+			. ' :date,'
+			. ' :body)';
 
+		$prepare = $db->prepare($write);
+
+		$db->beginTransaction();
 		for ($i = 1; $i <= $num; $i++) {
-			generate_sql($i, $db);
+			generate_sql($i, $prepare);
 		}
+		$db->commit();
 
 		$sql_end = round(microtime(true) - $sql_start, 5) . ' Seconds.';
 		echo "\r" . $num . ' ' . $sql . ' entries written to database in ' . $sql_end . "\n";
