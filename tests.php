@@ -111,13 +111,13 @@
 			. ' :body)';
 
 		$prepare = $db->prepare($write);
-
 		$db->beginTransaction();
+
 		for ($i = 1; $i <= $num; $i++) {
 			generate_sql($i, $prepare);
 		}
-		$db->commit();
 
+		$db->commit();
 		$sql_end = round(microtime(true) - $sql_start, 5) . ' Seconds.';
 		echo "\r" . $num . ' ' . $sql . ' entries written to database in ' . $sql_end . "\n";
 	}
