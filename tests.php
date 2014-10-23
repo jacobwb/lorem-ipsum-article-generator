@@ -139,20 +139,12 @@
 
 	function read_sql($db, $sql) {
 		echo 'Reading ' . $sql . ' entries read from database ...';
-		$sql_articles = array();
 		$sql_start = microtime(true);
-		$result = $db->query('SELECT * FROM articles') or exit('SQL query fail!');
-		$num = 0;
+		$result = $db->query('SELECT id, title, keywords, description, date, body FROM articles') or exit('SQL query fail!');
+		$result->execute();
 
-		while ($rows = $result->fetch(PDO::FETCH_ASSOC)) {
-			foreach ($rows as $key => $row) {
-				if ($key == 'id') continue;
-
-				$sql_articles[$rows['id']][$key] = $row;
-			}
-
-			$num++;
-		}
+		$sql_articles = $result->fetchAll(PDO::FETCH_ASSOC);
+		$num = count($sql_articles);
 
 		$sql_end = round(microtime(true) - $sql_start, 5) . ' Seconds.';
 		echo "\r" . $num . ' ' . $sql . ' entries read from database in ' . $sql_end . "\n";
