@@ -102,6 +102,7 @@
 	function write_sql($db, $num, $sql) {
 		echo $num . ' ' . $sql . ' entries written to database in ...';
 		$sql_start = microtime(true);
+
 		$write  = 'INSERT INTO articles VALUES'
 			. '(:id,'
 			. ' :title,'
