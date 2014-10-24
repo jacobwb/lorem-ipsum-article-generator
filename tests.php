@@ -132,8 +132,8 @@
 		$num = count($files);
 		echo $num . ' XML files read from disk in ...';
 
-		foreach ($files as $value) {
-			$xml_articles[] = simplexml_load_string(file_get_contents($value));
+		foreach ($files as $file) {
+			$xml_articles[] = simplexml_load_string(file_get_contents($file));
 		}
 
 		$xml_end = round(microtime(true) - $xml_start, 5) . ' Seconds.';
