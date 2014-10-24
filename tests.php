@@ -46,20 +46,22 @@
 	}
 
 	function generate_xml($id) {
-		$data = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" ?><page/>');
-		$data->title = generate_string();
-		$data->keywords = generate_string();
-		$data->description = generate_string();
-		$data->date = generate_string();
-		$data->body = generate_article();
-		$data->asXML('./xml/' . $id . '.xml');
+		$data = '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
+		$data .= '<page>' . "\n";
+		$data .= '<title>' . generate_string() . '</title>' . "\n";
+		$data .= '<keywords>' . generate_string() . '</keywords>' . "\n";
+		$data .= '<description>' . generate_string() . '</description>' . "\n";
+		$data .= '<date>' . generate_string() . '</date>' . "\n\n";
+		$data .= '<body>' . generate_article() . '</body>' . "\n";
+		$data .= '</page>';
+		file_put_contents('./xml/' . $id . '.xml', $data);
 	}
 
 	if (!file_exists('xml') and !mkdir('xml', 0755)) exit('Unable to create XML directory.');
 	$open_mysql = new PDO('mysql:host=' . $host . ';dbname=' . $dbname . ';charset=utf8', $user, $passwd);
 	$open_sqlite = new PDO('sqlite:sqlite.db');
 
-	$create  = 'CREATE TABLE IF NOT EXISTS articles'
+	$create = 'CREATE TABLE IF NOT EXISTS articles'
 		. '(id INTEGER PRIMARY KEY,'
 		. 'title TEXT,'
 		. 'keywords TEXT,'
@@ -143,7 +145,6 @@
 		$sql_start = microtime(true);
 		$result = $db->query('SELECT id, title, keywords, description, date, body FROM articles') or exit('SQL query fail!');
 		$result->execute();
-
 		$sql_articles = $result->fetchAll(PDO::FETCH_ASSOC);
 		$num = count($sql_articles);
 
