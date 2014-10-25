@@ -9,7 +9,7 @@
 	$host = 'localhost';
 	$dbname = 'articlestest';
 	$user = 'root';
-	$passwd = 'sword';
+	$passwd = 'password';
 	$lorem_ipsum = file_get_contents('lorem-ipsum.txt');
 	$paragraphs = explode("\n\n", $lorem_ipsum);
 	$metadata = explode(' ', $paragraphs[0]);
