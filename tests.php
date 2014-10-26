@@ -54,7 +54,8 @@
 		$data .= '<date>' . generate_string() . '</date>' . "\n\n";
 		$data .= '<body>' . generate_article() . '</body>' . "\n";
 		$data .= '</page>';
-		file_put_contents('./xml/' . $id . '.xml', $data);
+
+		return $data;
 	}
 
 	if (!file_exists('xml') and !mkdir('xml', 0755)) exit('Unable to create XML directory.');
@@ -94,7 +95,7 @@
 		$xml_start = microtime(true);
 
 		for ($i = 1; $i <= $num; $i++) {
-			generate_xml($i);
+			file_put_contents('./xml/' . $i . '.xml', generate_xml($i));
 		}
 
 		$xml_end = round(microtime(true) - $xml_start, 5) . ' Seconds.';
