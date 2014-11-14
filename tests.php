@@ -4,7 +4,7 @@
 	ini_set('display_errors', true);
 	error_reporting(E_ALL);
 
-	$mode = !empty($argv[1]) ? $argv[1] : 'both';
+	$mode = !empty($argv[1]) ? $argv[1] : 'all';
 	$times = !empty($argv[2]) ? $argv[2] : 1000;
 	$host = 'localhost';
 	$dbname = 'articlestest';
@@ -13,6 +13,7 @@
 	$lorem_ipsum = file_get_contents('lorem-ipsum.txt');
 	$paragraphs = explode("\n\n", $lorem_ipsum);
 	$metadata = explode(' ', $paragraphs[0]);
+	$lorem_ipsum_data = array();
 
 	function generate_article() {
 		global $paragraphs;
@@ -45,20 +46,50 @@
 		return $string;
 	}
 
+	function generate_lorem_ipsum($num) {
+		global $lorem_ipsum_data;
+
+		for ($i = 1; $i <= $num; $i++) {
+			$lorem_ipsum_data[$i] = array(
+				'title' => generate_string(),
+				'keywords' => generate_string(),
+				'description' => generate_string(),
+				'date' => generate_string(),
+				'body' => generate_article()
+			);
+		}
+	}
+
 	function generate_xml($id) {
+		global $lorem_ipsum_data;
+
 		$data = '<?xml version="1.0" encoding="UTF-8" ?>' . "\n";
 		$data .= '<page>' . "\n";
-		$data .= '<title>' . generate_string() . '</title>' . "\n";
-		$data .= '<keywords>' . generate_string() . '</keywords>' . "\n";
-		$data .= '<description>' . generate_string() . '</description>' . "\n";
-		$data .= '<date>' . generate_string() . '</date>' . "\n\n";
-		$data .= '<body>' . generate_article() . '</body>' . "\n";
+		$data .= '<title>' . $lorem_ipsum_data[$id]['title'] . '</title>' . "\n";
+		$data .= '<keywords>' . $lorem_ipsum_data[$id]['keywords'] . '</keywords>' . "\n";
+		$data .= '<description>' . $lorem_ipsum_data[$id]['description'] . '</description>' . "\n";
+		$data .= '<date>' . $lorem_ipsum_data[$id]['date'] . '</date>' . "\n\n";
+		$data .= '<body>' . $lorem_ipsum_data[$id]['body'] . '</body>' . "\n";
 		$data .= '</page>';
 
 		return $data;
 	}
 
+	function generate_json($id) {
+		global $lorem_ipsum_data;
+
+		$data = array();
+		$data['title'] = $lorem_ipsum_data[$id]['title'];
+		$data['keywords'] = $lorem_ipsum_data[$id]['keywords'];
+		$data['description'] = $lorem_ipsum_data[$id]['description'];
+		$data['date'] = $lorem_ipsum_data[$id]['date'];
+		$data['body'] = $lorem_ipsum_data[$id]['body'];
+
+		return json_encode($data, JSON_PRETTY_PRINT);
+	}
+
 	if (!file_exists('xml') and !mkdir('xml', 0755)) exit('Unable to create XML directory.');
+	if (!file_exists('json') and !mkdir('json', 0755)) exit('Unable to create JSON directory.');
 	$open_mysql = new PDO('mysql:host=' . $host . ';dbname=' . $dbname . ';charset=utf8', $user, $passwd);
 	$open_sqlite = new PDO('sqlite:sqlite.db');
 
@@ -74,13 +105,15 @@
 	$open_sqlite->exec($create);
 
 	function generate_sql($id, $prepare) {
+		global $lorem_ipsum_data;
+
 		$prepared_array = array(
 			'id' => $id,
-			'title' => generate_string(),
-			'keywords' => generate_string(),
-			'description' => generate_string(),
-			'date' => generate_string(),
-			'body' => generate_article(),
+			'title' => $lorem_ipsum_data[$id]['title'],
+			'keywords' => $lorem_ipsum_data[$id]['keywords'],
+			'description' => $lorem_ipsum_data[$id]['description'],
+			'date' => $lorem_ipsum_data[$id]['date'],
+			'body' => $lorem_ipsum_data[$id]['body']
 		);
 
 		try {
@@ -100,6 +133,18 @@
 
 		$xml_end = round(microtime(true) - $xml_start, 5) . ' Seconds.';
 		echo "\r" . $num . ' XML files written to disk in ' . $xml_end . "\n";
+	}
+
+	function write_json($num) {
+		echo $num . ' JSON files written to disk in ...';
+		$json_start = microtime(true);
+
+		for ($i = 1; $i <= $num; $i++) {
+			file_put_contents('./json/' . $i . '.json', generate_json($i));
+		}
+
+		$json_end = round(microtime(true) - $json_start, 5) . ' Seconds.';
+		echo "\r" . $num . ' JSON files written to disk in ' . $json_end . "\n";
 	}
 
 	function write_sql($db, $num, $sql) {
@@ -134,11 +179,26 @@
 		echo $num . ' XML files read from disk in ...';
 
 		foreach ($files as $file) {
-			$xml_articles[] = simplexml_load_string(file_get_contents($file));
+			$xml_articles[] = simplexml_load_string(file_get_contents($file), 'SimpleXMLElement', LIBXML_COMPACT);
 		}
 
 		$xml_end = round(microtime(true) - $xml_start, 5) . ' Seconds.';
 		echo "\r" . $num . ' XML files read from disk in ' . $xml_end . "\n";
+	}
+
+	function read_json() {
+		$json_articles = array();
+		$json_start = microtime(true);
+		$files = glob('./json/*.json');
+		$num = count($files);
+		echo $num . ' JSON files read from disk in ...';
+
+		foreach ($files as $file) {
+			$json_articles[] = json_decode(file_get_contents($file));
+		}
+
+		$json_end = round(microtime(true) - $json_start, 5) . ' Seconds.';
+		echo "\r" . $num . ' JSON files read from disk in ' . $json_end . "\n";
 	}
 
 	function read_sql($db, $sql) {
@@ -158,24 +218,30 @@
 	switch ($mode) {
 		case 'read': {
 			read_xml();
+			read_json();
 			read_sql($open_sqlite, 'SQLite');
 			read_sql($open_mysql, 'MySQL');
 			break;
 		}
 
 		case 'write': {
+			generate_lorem_ipsum($times);
 			write_xml($times);
+			write_json($times);
 			write_sql($open_sqlite, $times, 'SQLite');
 			write_sql($open_mysql, $times, 'MySQL');
 			break;
 		}
 
-		case 'both': {
+		case 'all': {
+			generate_lorem_ipsum($times);
 			write_xml($times);
+			write_json($times);
 			write_sql($open_sqlite, $times, 'SQLite');
 			write_sql($open_mysql, $times, 'MySQL');
 			echo "\n";
 			read_xml();
+			read_json();
 			read_sql($open_sqlite, 'SQLite');
 			read_sql($open_mysql, 'MySQL');
 			break;
