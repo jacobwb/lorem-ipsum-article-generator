@@ -1,7 +1,8 @@
 lorem-ipsum-article-generator
 =============================
 
-Time read and write of XML files, SQLite, and MySQL
+Time read and write of XML files, JSON files, SQLite, and MySQL.
+Each data format is filled with randomly generated Lorem Ipsum at an average length of 1000 words.
 
 Use it on the command-line like so
 --
